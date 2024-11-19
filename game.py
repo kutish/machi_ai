@@ -124,7 +124,13 @@ class MachiKoroGame:
                 continue
             coins_to_take = activation_dict[building_name]["value"]
             if coins_to_take == "special":
-                self.activate_special_card(building_name, current_player_id, roll, building_info, has_shopping_mall)
+                self.activate_special_card(
+                    building_name,
+                    current_player_id,
+                    roll,
+                    building_info,
+                    has_shopping_mall,
+                )
 
             if has_shopping_mall and secondary_industry_dict[building_name] == "bread":
                 coins_to_take += 1
@@ -146,7 +152,13 @@ class MachiKoroGame:
 
                 coins_to_take = activation_dict[building_name]["value"]
                 if coins_to_take == "special":
-                    self.activate_special_card(building_name, current_player_id, roll, building_info, has_shopping_mall)
+                    self.activate_special_card(
+                        building_name,
+                        current_player_id,
+                        roll,
+                        building_info,
+                        has_shopping_mall,
+                    )
 
                 coins_to_take *= building_info["working"]
                 self.players[player_id]["coins"] += coins_to_take
@@ -164,31 +176,60 @@ class MachiKoroGame:
 
             kwargs = {}
             if building_name == "tv_station":
-                kwargs["target_player_id"] = self.get_target_player_id(current_player_id)
+                kwargs["target_player_id"] = self.get_target_player_id(
+                    current_player_id
+                )
             if building_name == "business_center":
-                kwargs["target_player_id"] = self.get_target_player_id(current_player_id)
-                kwargs["target_player_building"] = random.choice([
-                    key for key in self.players[kwargs['target_player_id']]['establishments'].keys()
-                    if self.players[current_player_id]['establishments'][key]['working'] > 0
-                ])
-                kwargs["current_player_building"] = random.choice([
-                    self.players[current_player_id]['establishments'].keys()
-                ])
+                kwargs["target_player_id"] = self.get_target_player_id(
+                    current_player_id
+                )
+                kwargs["target_player_building"] = random.choice(
+                    [
+                        key
+                        for key in self.players[kwargs["target_player_id"]][
+                            "establishments"
+                        ].keys()
+                        if self.players[current_player_id]["establishments"][key][
+                            "working"
+                        ]
+                        > 0
+                    ]
+                )
+                kwargs["current_player_building"] = random.choice(
+                    [self.players[current_player_id]["establishments"].keys()]
+                )
 
-            self.activate_special_card(building_name, current_player_id, roll, building_info, has_shopping_mall, **kwargs)
+            self.activate_special_card(
+                building_name,
+                current_player_id,
+                roll,
+                building_info,
+                has_shopping_mall,
+                **kwargs,
+            )
 
     def get_target_player_id(self, current_player_id: int):
         # just take from the richest
-        target_player_id = sorted([
-            (player_id, self.players[player_id]['coins'])
-            for player_id in self.players
-            if player_id != current_player_id
-        ], key=lambda a: a[1], reverse=True)
+        target_player_id = sorted(
+            [
+                (player_id, self.players[player_id]["coins"])
+                for player_id in self.players
+                if player_id != current_player_id
+            ],
+            key=lambda a: a[1],
+            reverse=True,
+        )
         target_player_id = target_player_id[0][0]
         return target_player_id
 
     def activate_special_card(
-        self, card_name: str, current_player_id: int, roll: int, building_info: dict, has_shopping_mall: bool, **kwargs
+        self,
+        card_name: str,
+        current_player_id: int,
+        roll: int,
+        building_info: dict,
+        has_shopping_mall: bool,
+        **kwargs,
     ):
         match card_name:
             case "fruit_and_vegetable_market":
@@ -197,66 +238,97 @@ class MachiKoroGame:
                     "establishments"
                 ].items():
                     if primary_industry_dict.get(b_name, "") == "wheat":
-                      total_wheat_buildings += b_info['working'] + b_info['on_renovation']
+                        total_wheat_buildings += (
+                            b_info["working"] + b_info["on_renovation"]
+                        )
                 coins_to_gain = 2 * total_wheat_buildings
-                coins_to_gain *= building_info['working']
-                self.players[current_player_id]['coins'] += coins_to_gain
+                coins_to_gain *= building_info["working"]
+                self.players[current_player_id]["coins"] += coins_to_gain
             case "cheese_factory":
                 total_cow_buildings = 0
                 for b_name, b_info in self.players[current_player_id][
                     "establishments"
                 ].items():
                     if primary_industry_dict.get(b_name, "") == "cow":
-                      total_cow_buildings += b_info['working'] + b_info['on_renovation']
+                        total_cow_buildings += (
+                            b_info["working"] + b_info["on_renovation"]
+                        )
                 coins_to_gain = 3 * total_cow_buildings
-                coins_to_gain *= building_info['working']
-                self.players[current_player_id]['coins'] += coins_to_gain
+                coins_to_gain *= building_info["working"]
+                self.players[current_player_id]["coins"] += coins_to_gain
             case "furniture_factory":
                 total_gear_buildings = 0
                 for b_name, b_info in self.players[current_player_id][
                     "establishments"
                 ].items():
                     if primary_industry_dict.get(b_name, "") == "gear":
-                        total_gear_buildings += b_info['working'] + b_info['on_renovation']
+                        total_gear_buildings += (
+                            b_info["working"] + b_info["on_renovation"]
+                        )
                 coins_to_gain = 3 * total_gear_buildings
-                coins_to_gain *= building_info['working']
-                self.players[current_player_id]['coins'] += coins_to_gain
+                coins_to_gain *= building_info["working"]
+                self.players[current_player_id]["coins"] += coins_to_gain
             case "stadium":
                 reverse_player_order = self.get_reverse_player_order(current_player_id)
                 for player_id in reverse_player_order:
-                    coins_to_gain = min(2, self.players[player_id]['coins'])
+                    coins_to_gain = min(2, self.players[player_id]["coins"])
                     self.players[player_id] -= coins_to_gain
-                    self.players[current_player_id]['coins'] += coins_to_gain
+                    self.players[current_player_id]["coins"] += coins_to_gain
             case "tv_station":
                 self.players[kwargs["target_player_id"]] -= 5
-                self.players[current_player_id]['coins'] += 5
+                self.players[current_player_id]["coins"] += 5
             case "business_center":
-                self.players[kwargs['target_player_id']]["establishments"][kwargs["target_player_building"]]['working'] -= 1
-                if kwargs['target_player_building'] not in self.players[current_player_id]['establishments']:
-                    self.players[current_player_id]["establishments"][kwargs["target_player_building"]] = {'working': 1}
+                self.players[kwargs["target_player_id"]]["establishments"][
+                    kwargs["target_player_building"]
+                ]["working"] -= 1
+                if (
+                    kwargs["target_player_building"]
+                    not in self.players[current_player_id]["establishments"]
+                ):
+                    self.players[current_player_id]["establishments"][
+                        kwargs["target_player_building"]
+                    ] = {"working": 1}
                 else:
-                    self.players[current_player_id]["establishments"][kwargs["target_player_building"]]['working'] += 1
+                    self.players[current_player_id]["establishments"][
+                        kwargs["target_player_building"]
+                    ]["working"] += 1
 
-                if self.players[current_player_id]["establishments"][kwargs["current_player_building"]]['on_renovation'] > 0:
-                    self.players[current_player_id]["establishments"][kwargs["current_player_building"]]['on_renovation'] -= 1
+                if (
+                    self.players[current_player_id]["establishments"][
+                        kwargs["current_player_building"]
+                    ]["on_renovation"]
+                    > 0
+                ):
+                    self.players[current_player_id]["establishments"][
+                        kwargs["current_player_building"]
+                    ]["on_renovation"] -= 1
                     is_renovated = True
                 else:
-                    self.players[current_player_id]["establishments"][kwargs["current_player_building"]][
-                        'working'] -= 1
+                    self.players[current_player_id]["establishments"][
+                        kwargs["current_player_building"]
+                    ]["working"] -= 1
                     is_renovated = False
-                if kwargs['current_player_building'] not in self.players[kwargs['target_player_id']]['establishments']:
+                if (
+                    kwargs["current_player_building"]
+                    not in self.players[kwargs["target_player_id"]]["establishments"]
+                ):
                     if is_renovated:
-                        self.players[kwargs['target_player_id']]["establishments"][kwargs["current_player_building"]] = {'on_renovation': 1}
+                        self.players[kwargs["target_player_id"]]["establishments"][
+                            kwargs["current_player_building"]
+                        ] = {"on_renovation": 1}
                     else:
-                        self.players[kwargs['target_player_id']]["establishments"][
-                            kwargs["current_player_building"]] = {'working': 1}
+                        self.players[kwargs["target_player_id"]]["establishments"][
+                            kwargs["current_player_building"]
+                        ] = {"working": 1}
                 else:
                     if is_renovated:
-                        self.players[kwargs['target_player_id']]["establishments"][
-                            kwargs["current_player_building"]]['on_renovation'] += 1
+                        self.players[kwargs["target_player_id"]]["establishments"][
+                            kwargs["current_player_building"]
+                        ]["on_renovation"] += 1
                     else:
-                        self.players[kwargs['target_player_id']]["establishments"][
-                            kwargs["current_player_building"]]['working'] += 1
+                        self.players[kwargs["target_player_id"]]["establishments"][
+                            kwargs["current_player_building"]
+                        ]["working"] += 1
             case _:
                 raise ValueError(f"Unknown card_name: {card_name}")
 
