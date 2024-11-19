@@ -8,7 +8,7 @@ from constants import (
     secondary_industry_dict,
     restaurants_tuple,
     activation_dict,
-    building_cost_dict
+    building_cost_dict,
 )
 from typing import Literal
 
@@ -26,9 +26,12 @@ class MachiKoroGame:
         return {
             "id": player_id,
             "coins": 3,
-            "establishments": {key: {"on_renovation": 0, "working": val} for key, val in starting_buildings_dict.items()},
+            "establishments": {
+                key: {"on_renovation": 0, "working": val}
+                for key, val in starting_buildings_dict.items()
+            },
             "landmarks": {landmark: False for landmark in landmarks_tuple},
-            "is_first_turn": True, # homerule: no dice rolls on first turn of each player
+            "is_first_turn": True,  # homerule: no dice rolls on first turn of each player
         }
 
     @staticmethod
@@ -37,15 +40,22 @@ class MachiKoroGame:
         market_dict = {landmark: 1 for landmark in landmarks_tuple}
         market_dict = {
             **market_dict,
-            **{major_establishment: n_players for major_establishment in major_establishments_tuple}
+            **{
+                major_establishment: n_players
+                for major_establishment in major_establishments_tuple
+            },
         }
-        for building in list(primary_industry_dict.keys()) + list(secondary_industry_dict.keys()) + list(restaurants_tuple):
+        for building in (
+            list(primary_industry_dict.keys())
+            + list(secondary_industry_dict.keys())
+            + list(restaurants_tuple)
+        ):
             market_dict[building] = 6
 
         return market_dict
 
     @staticmethod
-    def roll_dice(num_dice=Literal[1,2]):
+    def roll_dice(num_dice=Literal[1, 2]):
         """Simulate rolling dice."""
         roll1 = random.randint(1, 6)
         roll2 = random.randint(1, 6) if num_dice == 2 else 0
@@ -53,7 +63,7 @@ class MachiKoroGame:
         return roll1 + roll2, is_double
 
     def get_reverse_player_order(self, player_id: int):
-        order = [player_id - 1 if player_id - 1 >=0 else self.n_players]
+        order = [player_id - 1 if player_id - 1 >= 0 else self.n_players]
         for id_ in range(self.n_players):
             if order[-1] == 0:
                 order.append(self.n_players)
@@ -67,57 +77,118 @@ class MachiKoroGame:
         # red goes first
         reverse_player_order = self.get_reverse_player_order(current_player_id)
         for player_id in reverse_player_order:
-            has_business_center = self.players[player_id]['landmarks']['business_center']
-            for building_name, building_info in self.players[player_id]['establishments'].items():
-                if self.players[current_player_id]['coins'] == 0:
+            has_shopping_mall = self.players[player_id]["landmarks"]["shopping_mall"]
+            for building_name, building_info in self.players[player_id][
+                "establishments"
+            ].items():
+                if self.players[current_player_id]["coins"] == 0:
                     continue
                 if building_name not in restaurants_tuple:
                     continue
-                if building_info['working'] == 0:
+                if building_info["working"] == 0:
                     continue
-                if roll not in activation_dict[building_name]['roll']:
+                if roll not in activation_dict[building_name]["roll"]:
                     continue
-                coins_to_take = activation_dict[building_name]['value']
-                if has_business_center:
+                coins_to_take = activation_dict[building_name]["value"]
+                if has_shopping_mall:
                     coins_to_take += 1
-                coins_to_take *= building_info['working']
-                coins_to_take = min(coins_to_take, self.players[current_player_id]['coins'])
-                self.players[current_player_id]['coins'] -= coins_to_take
-                self.players[player_id]['coins'] += coins_to_take
+                coins_to_take *= building_info["working"]
+                coins_to_take = min(
+                    coins_to_take, self.players[current_player_id]["coins"]
+                )
+                self.players[current_player_id]["coins"] -= coins_to_take
+                self.players[player_id]["coins"] += coins_to_take
 
         # green goes second, loan office is the first of them
+        if "loan_office" in self.players[current_player_id]["establishments"].keys():
+            coins_to_take = activation_dict["loan_office"]["value"]
+            coins_to_take *= self.players[current_player_id]["establishments"][
+                "loan_office"
+            ]["working"]
+            coins_to_take = min(
+                abs(coins_to_take), self.players[current_player_id]["coins"]
+            )
+            self.players[current_player_id]["coins"] -= coins_to_take
 
+        has_shopping_mall = self.players[current_player_id]["landmarks"][
+            "shopping_mall"
+        ]
+        for building_name, building_info in self.players[current_player_id][
+            "establishments"
+        ].items():
+            if building_name not in secondary_industry_dict:
+                continue
+            if building_info["working"] == 0:
+                continue
+            if roll not in activation_dict[building_name]["roll"]:
+                continue
+            coins_to_take = activation_dict[building_name]["value"]
+            if coins_to_take == "special":
+                self.activate_special_card(building_name, current_player_id, roll, building_info, has_shopping_mall)
 
+            if has_shopping_mall and secondary_industry_dict[building_name] == "bread":
+                coins_to_take += 1
+            coins_to_take *= building_info["working"]
+            self.players[current_player_id]["coins"] += coins_to_take
 
-    def activate_special_card(self, card_name: str, current_player_id: int, roll: int, **kwargs):
+        # blue goes next
+        # purple goes last
+
+    def activate_special_card(
+        self, card_name: str, current_player_id: int, roll: int, building_info: dict, has_shopping_mall: bool
+    ):
         pass
 
     def take_turn(self):
         """Simulate one turn for the current player."""
         player = self.players[self.current_turn]
 
-        if not player['is_first_turn']:
+        if not player["is_first_turn"]:
             # Step 1: Roll Dice
-            num_dice = 1 if not player["landmarks"]["train_station"] else random.choice([1, 2])
+            num_dice = (
+                1 if not player["landmarks"]["train_station"] else random.choice([1, 2])
+            )
             roll, is_double = self.roll_dice(num_dice)
-            print(f"Player {player['id']} rolled {roll} ({'which is double' if is_double else 'not double'}).")
+            print(
+                f"Player {player['id']} rolled {roll} ({'which is double' if is_double else 'not double'})."
+            )
 
-            # Step 2: Activate Cards
-            self.activate_cards(player['id'], roll)
-            player['is_first_turn'] = False
+            # Step 2: player can choose to reroll if he has radio tower
+            if player["landmarks"]["radio_tower"]:
+                do_reroll = bool(random.random() < 0.5)
+                if do_reroll:
+                    print(f'Player {player["id"]} chose to reroll')
+                    num_dice = (
+                        1
+                        if not player["landmarks"]["train_station"]
+                        else random.choice([1, 2])
+                    )
+                    roll, is_double = self.roll_dice(num_dice)
+                    print(
+                        f"Player {player['id']} rolled {roll} ({'which is double' if is_double else 'not double'})."
+                    )
 
-        # Step 3: city hall gives a coin if active player does not have any
-        player['coins'] = 1 if player['coins'] == 0 else player['coins']
+            # Step 3: Activate Cards
+            self.activate_cards(player["id"], roll)
+        player["is_first_turn"] = False
 
-        # Step 4: Buy a card (randomly for now)
+        # Step 4: Сity hall gives a coin if active player does not have any
+        player["coins"] = 1 if player["coins"] == 0 else player["coins"]
+
+        # Step 5: Buy a card (randomly for now)
         if player["coins"] > 0:
-            possible_purchases = [card for card, count in self.market.items() if
-                                  building_cost_dict[card] <= player["coins"] and count > 0]
+            possible_purchases = [
+                card
+                for card, count in self.market.items()
+                if building_cost_dict[card] <= player["coins"] and count > 0
+            ]
             if possible_purchases:
                 purchase = random.choice(possible_purchases)
                 player["coins"] -= building_cost_dict[purchase]
                 self.market[purchase] -= 1
-                player["establishments"][purchase]['working'] = player["establishments"].get(purchase, 0) + 1
+                player["establishments"][purchase]["working"] = (
+                    player["establishments"].get(purchase, 0) + 1
+                )
                 print(f"Player {player['id']} bought {purchase}.")
 
         # Move to next player
@@ -126,7 +197,9 @@ class MachiKoroGame:
     def is_game_over(self):
         """Check if a player has won."""
         for player_id in self.players:
-            if all(self.players[player_id]["landmarks"].values()):  # All landmarks completed
+            if all(
+                self.players[player_id]["landmarks"].values()
+            ):  # All landmarks completed
                 return True, player_id
         return False, -1
 
