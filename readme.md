@@ -1,3 +1,5 @@
+↓↓↓ Original readme ↓↓↓
+-----------
 **Machi AI**
 
 This is a small project that I worked on after I was wondering if I could use neural networks to simulate the game. Essentially, there are five types of decisions the AI can make, so I have five different neural networks predicting the outcome of a player winning a game at a particular point in time. In hindsight, I could have shared the networks, as most of the inputs are constant across them.
