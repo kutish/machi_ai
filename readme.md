@@ -1,3 +1,4 @@
+Rules are implemented according to game manual and [cards_list](https://machi-koro.fandom.com/wiki/List_of_cards).
 ↓↓↓ Original readme ↓↓↓
 -----------
 **Machi AI**
