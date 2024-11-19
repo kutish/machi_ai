@@ -1,108 +1,155 @@
+from frozendict import frozendict
 
-class dotdict(dict):
-    def __getattr__(self, name):
-    	if  name  == '__deepcopy__':
-    		return dict(self).__getattr__(name)
-        return self[name]
 
-starting_buildings = dotdict({
-	'wheat_field':1,
-	'apple_orchard':0,
-	'ranch':0,
-	'forest':0,
-	'mine':0,
-	'fruit&veg_market':0,
-	'cheese_factory':0,
-	'furniture_factory':0,
-	'bakery':1,
-	'convenience_store':0,
-	'cafe':0,
-	'family_restaurant':0,
-	'stadium':0,
-	'tv_station':0,
-	'business_center':0,
-	'shopping_mall':0,
-	'station':0,
-	'amusement_park':0,
-	'radio_tower':0
+starting_buildings_dict = frozendict({
+    "wheat_field": 1,
+    "bakery": 1,
 })
 
-building_cost = dotdict({
-	'wheat_field':1,
-	'apple_orchard':3,
-	'ranch':1,
-	'forest':3,
-	'mine':6,
-	'fruit&veg_market':2,
-	'cheese_factory':5,
-	'furniture_factory':3,
-	'bakery':1,
-	'convenience_store':2,
-	'cafe':2,
-	'family_restaurant':3,
-	'stadium':6,
-	'tv_station':7,
-	'business_center':8,
-	'shopping_mall':10,
-	'station':4,
-	'amusement_park':16,
-	'radio_tower':22
+building_cost_dict = frozendict({
+    "wheat_field": 1,
+    "apple_orchard": 3,
+    "ranch": 1,
+    "forest": 3,
+    "mine": 6,
+    "fruit_and_vegetable_market": 2,
+    "cheese_factory": 5,
+    "furniture_factory": 3,
+    "bakery": 1,
+    "convenience_store": 2,
+    "cafe": 2,
+    "family_restaurant": 3,
+    "stadium": 6,
+    "tv_station": 7,
+    "business_center": 8,
+    "shopping_mall": 10,
+    "amusement_park": 16,
+    "radio_tower": 22,
+    "airport": 30,
+    "train_station": 4,
+    "flower_garden": 2,
+    "mackerel_boat": 2,
+    "tuna_boat": 5,
+    "flower_shop": 1,
+    "food_warehouse": 2,
+    "sushi_bar": 2,
+    "pizza_joint": 1,
+    "hamburger_stand": 1,
+    "publisher": 5,
+    "tax_office": 4,
+    "harbor": 2,
+    "corn_field": 2,
+    "vineyard": 3,
+    "general_store": 0,
+    "moving_company": 2,
+    "loan_office": -5,
+    "winery": 3,
+    "demolition_company": 2,
+    "soda_bottling_plant": 5,
+    "french_restaurant": 3,
+    "members_only_club": 4,
+    "park": 3,
+    "renovation_company": 4,
+    "tech_startup": 1,
 })
 
-supply_buildings = dotdict({
-	'wheat_field':6,
-	'apple_orchard':6,
-	'ranch':6,
-	'forest':6,
-	'mine':6,
-	'fruit&veg_market':6,
-	'cheese_factory':6,
-	'furniture_factory':6,
-	'bakery':6,
-	'convenience_store':6,
-	'cafe':6,
-	'family_restaurant':6,
-	'stadium':4,
-	'tv_station':4,
-	'business_center':4,
-	'shopping_mall':4,
-	'station':4,
-	'amusement_park':4,
-	'radio_tower':4
+activation_dict = frozendict({
+    "wheat_field": {"roll": 1, "value": 1},
+    "apple_orchard": {"roll": 10, "value": 3},
+    "ranch": {"roll": 2, "value": 1},
+    "forest": {"roll": 5, "value": 1},
+    "mine": {"roll": 9, "value": 5},
+    "fruit_and_vegetable_market": {"roll": (11, 12), "value": "special"},
+    "cheese_factory": {"roll": 7, "value": "special"},
+    "furniture_factory": {"roll": 8, "value": "special"},
+    "bakery": {"roll": (2, 3), "value": 1},
+    "convenience_store": {"roll": 4, "value": 3},
+    "cafe": {"roll": 3, "value": 1},
+    "family_restaurant": {"roll": (9, 10), "value": 2},
+    "stadium": {"roll": 6, "value": "special"},
+    "tv_station": {"roll": 6, "value": "special"},
+    "business_center": {"roll": 6, "value": "special"},
+    "flower_garden": {"roll": 4, "value": 1},
+    "mackerel_boat": {"roll": 8, "value": 3},
+    "tuna_boat": {"roll": (12, 13, 14), "value": "special"},
+    "flower_shop": {"roll": 6, "value": "special"},
+    "food_warehouse": {"roll": (12, 13), "value": "special"},
+    "sushi_bar": {"roll": 1, "value": "special"},
+    "pizza_joint": {"roll": 7, "value": "special"},
+    "hamburger_stand": {"roll": 8, "value": 1},
+    "publisher": {"roll": 7, "value": "special"},
+    "tax_office": {"roll": (8, 9), "value": "special"},
+    "corn_field": {"roll": (3, 4), "value": "special"},
+    "vineyard": {"roll": 7, "value": 3},
+    "general_store": {"roll": 2, "value": "special"},
+    "moving_company": (9, 10),
+    "loan_office": {"roll": (5, 6), "value": -2},
+    "winery": {"roll": 9, "value": "special"},
+    "demolition_company": {"roll": 4, "value": "special"},
+    "soda_bottling_plant": {"roll": 11, "value": "special"},
+    "french_restaurant": {"roll": 5, "value": "special"},
+    "members_only_club": {"roll": (12, 13, 14), "value": "special"},
+    "park": {"roll": (11, 12, 13), "value": "special"},
+    "renovation_company": {"roll": 8, "value": "special"},
+    "tech_startup": {"roll": 10, "value": "special"},
 })
 
-player_limit = dotdict({
-	'wheat_field':10,
-	'apple_orchard':6,
-	'ranch':6,
-	'forest':6,
-	'mine':6,
-	'fruit&veg_market':6,
-	'cheese_factory':6,
-	'furniture_factory':6,
-	'bakery':10,
-	'convenience_store':6,
-	'cafe':6,
-	'family_restaurant':6,
-	'stadium':1,
-	'tv_station':1,
-	'business_center':1,
-	'shopping_mall':1,
-	'station':1,
-	'amusement_park':1,
-	'radio_tower':1
+landmarks_tuple = (
+    "train_station",
+    "shopping_mall",
+    "amusement_park",
+    "radio_tower",
+    "city_hall",
+    "harbor",
+    "airport",
+)
+
+major_establishments_tuple = (
+    "stadium",
+    "tv_station",
+    "business_center",
+    "publisher",
+    "tax_office",
+    "park",
+    "renovation_company",
+    "tech_startup",
+)
+
+primary_industry_dict = frozendict({
+    "wheat_field": "wheat",
+    "ranch": "cow",
+    "forest": "gear",
+    "mine": "gear",
+    "apple_orchard": "wheat",
+    "flower_garden": "wheat",
+    "mackerel_boat": "boat",
+    "tuna_boat": "boat",
+    "corn_field": "wheat",
+    "vineyard": "wheat",
 })
 
-BUILDING_ORDER = player_limit.keys()
-BUILDING_ORDER.sort()
+secondary_industry_dict = frozendict({
+    "bakery": "bread",
+    "convenience_store": "bread",
+    "cheese_factory": "factory",
+    "furniture_factory": "factory",
+    "fruit_and_vegetable_market": "fruit",
+    "flower_shop": "bread",
+    "food_warehouse": "factory",
+    "general_store": "bread",
+    "moving_company": "suitcase",
+    "loan_office": "suitcase",
+    "winery": "factory",
+    "demolition_company": "suitcase",
+    "soda_bottling_plant": "factory",
+})
 
-BUILDING_INDEX = {key:i for i, key in enumerate(BUILDING_ORDER)}
-
-#need to make sure vector is consistent
-BUILDING_VECTOR_TEMPLATE = [[0 for _ in range(player_limit[key] + 1)] for key in BUILDING_ORDER]
-
-SWAPPABLE_BUILDING_ORDER = [building for building in BUILDING_ORDER if building not in 
-	('stadium','tv_station','business_center','shopping_mall','station','amusement_park','radio_tower')]
-
-
-SWAPPABLE_BUILDING_INDEX = {key:i for i, key in enumerate(SWAPPABLE_BUILDING_ORDER)}
+restaurants_tuple = (
+    "cafe",
+    "family_restaurant",
+    "sushi_bar",
+    "pizza_joint",
+    "hamburger_stand",
+    "french_restaurant",
+    "members_only_club",
+)

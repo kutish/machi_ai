@@ -47,7 +47,7 @@ class Player(object):
 		use_max_probability = game.use_max_probability
 		prob_mod = game.prob_mod 
 		self.game = game 
-		self.buildings = deepcopy(starting_buildings)
+		self.buildings = deepcopy(starting_buildings_dict)
 		self.coins = 3
 		self.order = order
 		self.shared_ai = False
@@ -102,7 +102,7 @@ class Player(object):
 	def reset_game(self, game, order):
 		self.game = game 
 		self.AI.game = game 
-		self.buildings = deepcopy(starting_buildings)
+		self.buildings = deepcopy(starting_buildings_dict)
 		self.coins = 3
 		self.order = order
 		self.win = 0
@@ -250,7 +250,7 @@ class Player(object):
 		if self.buy_choice <> 19:
 			self.buildings[BUILDING_ORDER[self.buy_choice]] += 1
 			self.game.building_supply[BUILDING_ORDER[self.buy_choice]] -= 1
-			self.coins -= building_cost[BUILDING_ORDER[self.buy_choice]]
+			self.coins -= building_cost_dict[BUILDING_ORDER[self.buy_choice]]
 			if self.game.record_game:
 				self.game.game_record_file.write('BUY: player %d bought a(n) %s (now has %d of them)\n' % 
 					(self.order, 
@@ -354,7 +354,7 @@ class Player(object):
 				self.game.game_record_file.write('FURNITURE FACTORY: player %d receives %d coins (now has %d)\n' % (self.order, val, self.coins + val ))
 			return val 
 		if self.roll_value in [11, 12]:
-			val = 2 * self.buildings['fruit&veg_market'] * (self.buildings.wheat_field + self.buildings.apple_orchard)
+			val = 2 * self.buildings['fruit_and_vegetable_market'] * (self.buildings.wheat_field + self.buildings.apple_orchard)
 			if self.game.record_game and val > 0:
 				self.game.game_record_file.write('FRUIT&VEG MARKET: player %d receives %d coins (now has %d)\n' % (self.order, val, self.coins + val ))
 			return val 
@@ -433,7 +433,7 @@ class Player(object):
 		#not buying is always an option, hence the last entry is always 1
 		mask = [1] * 20
 		for i in range(19):
-			if self.coins < building_cost[BUILDING_ORDER[i]]:
+			if self.coins < building_cost_dict[BUILDING_ORDER[i]]:
 				mask[i] = 0
 			elif self.game.building_supply[BUILDING_ORDER[i]] == 0:
 				mask[i] = 0
