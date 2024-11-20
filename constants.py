@@ -75,7 +75,7 @@ activation_dict = frozendict({
     "flower_shop": {"roll": (6,), "value": "special"},
     "food_warehouse": {"roll": (12, 13), "value": "special"},
     "sushi_bar": {"roll": (1,), "value": "special"},
-    "pizza_joint": {"roll": (7,), "value": "special"},
+    "pizza_joint": {"roll": (7,), "value": 1},
     "hamburger_stand": {"roll": (8,), "value": 1},
     "publisher": {"roll": (7,), "value": "special"},
     "tax_office": {"roll": (8, 9), "value": "special"},

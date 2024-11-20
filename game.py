@@ -1,4 +1,5 @@
 import random
+import math
 
 from constants import (
     starting_buildings_dict,
@@ -10,7 +11,6 @@ from constants import (
     activation_dict,
     building_cost_dict,
 )
-from typing import Literal
 
 
 class MachiKoroGame:
@@ -55,7 +55,7 @@ class MachiKoroGame:
         return market_dict
 
     @staticmethod
-    def roll_dice(num_dice=Literal[1, 2]):
+    def roll_dice(num_dice=1):
         """Simulate rolling dice."""
         roll1 = random.randint(1, 6)
         roll2 = random.randint(1, 6) if num_dice == 2 else 0
@@ -90,6 +90,11 @@ class MachiKoroGame:
                 if roll not in activation_dict[building_name]["roll"]:
                     continue
                 coins_to_take = activation_dict[building_name]["value"]
+                if coins_to_take == 'special':
+                    kwargs = {'target_player_id': current_player_id, 'receiving_player_id': player_id}
+                    self.activate_special_card(building_name, -1, building_info, **kwargs)
+                    continue
+
                 if has_shopping_mall:
                     coins_to_take += 1
                 coins_to_take *= building_info["working"]
@@ -124,7 +129,13 @@ class MachiKoroGame:
                 continue
             coins_to_take = activation_dict[building_name]["value"]
             if coins_to_take == "special":
-                self.activate_special_card(building_name, current_player_id, roll, building_info, has_shopping_mall)
+                kwargs = {}
+                if building_name == "moving_company":
+                    kwargs["target_player_id"] = self.get_target_player_id(current_player_id)
+                    kwargs["current_player_building"] = random.choice([
+                        self.players[current_player_id]['establishments'].keys()
+                    ])
+                self.activate_special_card(building_name, current_player_id, building_info, **kwargs)
 
             if has_shopping_mall and secondary_industry_dict[building_name] == "bread":
                 coins_to_take += 1
@@ -146,7 +157,7 @@ class MachiKoroGame:
 
                 coins_to_take = activation_dict[building_name]["value"]
                 if coins_to_take == "special":
-                    self.activate_special_card(building_name, current_player_id, roll, building_info, has_shopping_mall)
+                    self.activate_special_card(building_name, current_player_id, building_info)
 
                 coins_to_take *= building_info["working"]
                 self.players[player_id]["coins"] += coins_to_take
@@ -175,7 +186,7 @@ class MachiKoroGame:
                     self.players[current_player_id]['establishments'].keys()
                 ])
 
-            self.activate_special_card(building_name, current_player_id, roll, building_info, has_shopping_mall, **kwargs)
+            self.activate_special_card(building_name, current_player_id, building_info, **kwargs)
 
     def get_target_player_id(self, current_player_id: int):
         # just take from the richest
@@ -188,7 +199,7 @@ class MachiKoroGame:
         return target_player_id
 
     def activate_special_card(
-        self, card_name: str, current_player_id: int, roll: int, building_info: dict, has_shopping_mall: bool, **kwargs
+        self, card_name: str, current_player_id: int, building_info: dict, **kwargs
     ):
         match card_name:
             case "fruit_and_vegetable_market":
@@ -231,32 +242,122 @@ class MachiKoroGame:
                 self.players[kwargs["target_player_id"]] -= 5
                 self.players[current_player_id]['coins'] += 5
             case "business_center":
-                self.players[kwargs['target_player_id']]["establishments"][kwargs["target_player_building"]]['working'] -= 1
+                target_player_id = kwargs['target_player_id']
+                target_player_building = kwargs["target_player_building"]
+                current_player_building = kwargs["current_player_building"]
+                self.players[target_player_id]["establishments"][target_player_building]['working'] -= 1
                 if kwargs['target_player_building'] not in self.players[current_player_id]['establishments']:
-                    self.players[current_player_id]["establishments"][kwargs["target_player_building"]] = {'working': 1}
+                    self.players[current_player_id]["establishments"][target_player_building] = {'working': 1}
                 else:
-                    self.players[current_player_id]["establishments"][kwargs["target_player_building"]]['working'] += 1
+                    self.players[current_player_id]["establishments"][target_player_building]['working'] += 1
 
-                if self.players[current_player_id]["establishments"][kwargs["current_player_building"]]['on_renovation'] > 0:
-                    self.players[current_player_id]["establishments"][kwargs["current_player_building"]]['on_renovation'] -= 1
+                if self.players[current_player_id]["establishments"][current_player_building]['on_renovation'] > 0:
+                    self.players[current_player_id]["establishments"][current_player_building]['on_renovation'] -= 1
                     is_renovated = True
                 else:
-                    self.players[current_player_id]["establishments"][kwargs["current_player_building"]][
+                    self.players[current_player_id]["establishments"][current_player_building][
                         'working'] -= 1
                     is_renovated = False
-                if kwargs['current_player_building'] not in self.players[kwargs['target_player_id']]['establishments']:
+                if current_player_building not in self.players[kwargs['target_player_id']]['establishments']:
                     if is_renovated:
-                        self.players[kwargs['target_player_id']]["establishments"][kwargs["current_player_building"]] = {'on_renovation': 1}
+                        self.players[target_player_id]["establishments"][current_player_building] = {'on_renovation': 1}
                     else:
-                        self.players[kwargs['target_player_id']]["establishments"][
-                            kwargs["current_player_building"]] = {'working': 1}
+                        self.players[target_player_id]["establishments"][
+                            current_player_building] = {'working': 1}
                 else:
                     if is_renovated:
-                        self.players[kwargs['target_player_id']]["establishments"][
-                            kwargs["current_player_building"]]['on_renovation'] += 1
+                        self.players[target_player_id]["establishments"][
+                            current_player_building]['on_renovation'] += 1
                     else:
-                        self.players[kwargs['target_player_id']]["establishments"][
-                            kwargs["current_player_building"]]['working'] += 1
+                        self.players[target_player_id]["establishments"][
+                            current_player_building]['working'] += 1
+            case "tuna_boat":
+                tuna_roll = self.roll_dice(num_dice=2)
+                coins_to_gain = tuna_roll * building_info['working']
+                self.players[current_player_id] += coins_to_gain
+            case "flower_shop":
+                flower_gardens = self.players[current_player_id]['establishments'].get(
+                    'flower_garden',
+                    {"working": 0, "on_renovation": 0},
+                )
+                flower_gardens = flower_gardens['working'] + flower_gardens['on_renovation']
+                coins_to_gain = flower_gardens
+                self.players[current_player_id] += coins_to_gain
+            case "food_warehouse":
+                total_restaurants = 0
+                for b_name, b_info in self.players[current_player_id]['establishments']:
+                    if b_name in restaurants_tuple:
+                        total_restaurants += b_info['working'] + b_info['on_renovation']
+                coins_to_gain = total_restaurants * 2
+                self.players[current_player_id] += coins_to_gain
+            case "sushi_bar":
+                target_player_id = kwargs['target_player_id']
+                receiving_player_id = kwargs['receiving_player_id']
+                coins_to_take = 3
+                if self.players[receiving_player_id]['landmarks']['shopping_mall']:
+                    coins_to_take += 1
+                if not self.players[receiving_player_id]['landmarks']['harbor']:
+                    coins_to_take = 0
+                coins_to_take *= self.players[receiving_player_id]['establishments']['sushi_bar']['working']
+                self.players[target_player_id]['coins'] -= coins_to_take
+                self.players[receiving_player_id]['coins'] += coins_to_take
+            case "publisher":
+                reverse_player_order = self.get_reverse_player_order(current_player_id)
+                for target_player_id in reverse_player_order:
+                    coins_to_take = 0
+                    for b_name, b_info in self.players[target_player_id]['establishments']:
+                        if b_name in restaurants_tuple or secondary_industry_dict.get(b_name, "") == "bread":
+                            coins_to_take += b_info['working'] + b_info['on_renovation']
+                    coins_to_take = min(coins_to_take, self.players[target_player_id]['coins'])
+                    self.players[target_player_id]['coins'] -= coins_to_take
+                    self.players[current_player_id]['coins'] += coins_to_take
+            case "tax_office":
+                reverse_player_order = self.get_reverse_player_order(current_player_id)
+                for target_player_id in reverse_player_order:
+                    if self.players[target_player_id]['coins'] >= 10:
+                        coins_to_take = math.floor(self.players[target_player_id]['coins'] / 2)
+                        self.players[target_player_id]['coins'] -= coins_to_take
+                        self.players[current_player_id]['coins'] += coins_to_take
+            case "corn_field":
+                if sum(self.players[current_player_id]['landmarks']) < 2:
+                    coins_to_gain = 2
+                    coins_to_gain *= building_info["working"]
+                else:
+                    coins_to_gain = 0
+                self.players[current_player_id]['coins'] += coins_to_gain
+            case "general_store":
+                if sum(self.players[current_player_id]['landmarks']) < 2:
+                    coins_to_gain = 2 if not self.players[current_player_id]['landmarks']['shopping_mall'] else 3
+                    coins_to_gain *= building_info["working"]
+                else:
+                    coins_to_gain = 0
+                self.players[current_player_id]['coins'] += coins_to_gain
+            case "moving_company":
+                target_player_id = kwargs['target_player_id']
+                current_player_building = kwargs["current_player_building"]
+
+                if self.players[current_player_id]["establishments"][current_player_building]['on_renovation'] > 0:
+                    self.players[current_player_id]["establishments"][current_player_building]['on_renovation'] -= 1
+                    is_renovated = True
+                else:
+                    self.players[current_player_id]["establishments"][current_player_building][
+                        'working'] -= 1
+                    is_renovated = False
+                if current_player_building not in self.players[kwargs['target_player_id']]['establishments']:
+                    if is_renovated:
+                        self.players[target_player_id]["establishments"][current_player_building] = {'on_renovation': 1}
+                    else:
+                        self.players[target_player_id]["establishments"][
+                            current_player_building] = {'working': 1}
+                else:
+                    if is_renovated:
+                        self.players[target_player_id]["establishments"][
+                            current_player_building]['on_renovation'] += 1
+                    else:
+                        self.players[target_player_id]["establishments"][
+                            current_player_building]['working'] += 1
+                coins_to_gain = 4
+                self.players[current_player_id]['coins'] += coins_to_gain
             case _:
                 raise ValueError(f"Unknown card_name: {card_name}")
 
