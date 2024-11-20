@@ -11,6 +11,7 @@ from constants import (
     activation_dict,
     building_cost_dict,
 )
+from typing import Literal
 
 
 class MachiKoroGame:
