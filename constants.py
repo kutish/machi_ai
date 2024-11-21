@@ -99,7 +99,6 @@ landmarks_tuple = (
     "shopping_mall",
     "amusement_park",
     "radio_tower",
-    "city_hall",
     "harbor",
     "airport",
 )
