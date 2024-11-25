@@ -2,8 +2,8 @@ from frozendict import frozendict
 
 
 starting_buildings_dict = frozendict({
-    "wheat_field": 1,
-    "bakery": 1,
+    "wheat_field": (1, 0),
+    "bakery": (1, 0),
 })
 
 building_cost_dict = frozendict({
