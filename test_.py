@@ -1,5 +1,10 @@
+from constants import (
+    major_establishments_tuple,
+    primary_industry_dict,
+    restaurants_tuple,
+    secondary_industry_dict,
+)
 from game import MachiKoroGame
-from constants import primary_industry_dict, secondary_industry_dict, restaurants_tuple, major_establishments_tuple
 
 
 def test_reverse_order_2_0():
@@ -106,49 +111,66 @@ def test_game_5():
 def test_game_2_all_buildings():
     starting_establishments = {
         key: (1, 1)
-        for key
-        in list(primary_industry_dict.keys()) + list(secondary_industry_dict.keys()) + list(restaurants_tuple)
+        for key in list(primary_industry_dict.keys())
+        + list(secondary_industry_dict.keys())
+        + list(restaurants_tuple)
     }
     starting_major_establishments = major_establishments_tuple
     for _ in range(100):
-        game = MachiKoroGame(n_players=2, starting_buildings=starting_establishments, starting_major_establishments=starting_major_establishments)
+        game = MachiKoroGame(
+            n_players=2,
+            starting_buildings=starting_establishments,
+            starting_major_establishments=starting_major_establishments,
+        )
         game.play_game()
 
 
 def test_game_3_all_buildings():
     starting_establishments = {
         key: (1, 1)
-        for key
-        in list(primary_industry_dict.keys()) + list(secondary_industry_dict.keys()) + list(restaurants_tuple)
+        for key in list(primary_industry_dict.keys())
+        + list(secondary_industry_dict.keys())
+        + list(restaurants_tuple)
     }
     starting_major_establishments = major_establishments_tuple
     for _ in range(100):
-        game = MachiKoroGame(n_players=3, starting_buildings=starting_establishments,
-                             starting_major_establishments=starting_major_establishments)
+        game = MachiKoroGame(
+            n_players=3,
+            starting_buildings=starting_establishments,
+            starting_major_establishments=starting_major_establishments,
+        )
         game.play_game()
 
 
 def test_game_4_all_buildings():
     starting_establishments = {
         key: (1, 1)
-        for key
-        in list(primary_industry_dict.keys()) + list(secondary_industry_dict.keys()) + list(restaurants_tuple)
+        for key in list(primary_industry_dict.keys())
+        + list(secondary_industry_dict.keys())
+        + list(restaurants_tuple)
     }
     starting_major_establishments = major_establishments_tuple
     for _ in range(100):
-        game = MachiKoroGame(n_players=4, starting_buildings=starting_establishments,
-                             starting_major_establishments=starting_major_establishments)
+        game = MachiKoroGame(
+            n_players=4,
+            starting_buildings=starting_establishments,
+            starting_major_establishments=starting_major_establishments,
+        )
         game.play_game()
 
 
 def test_game_5_all_buildings():
     starting_establishments = {
         key: (1, 1)
-        for key
-        in list(primary_industry_dict.keys()) + list(secondary_industry_dict.keys()) + list(restaurants_tuple)
+        for key in list(primary_industry_dict.keys())
+        + list(secondary_industry_dict.keys())
+        + list(restaurants_tuple)
     }
     starting_major_establishments = major_establishments_tuple
     for _ in range(100):
-        game = MachiKoroGame(n_players=5, starting_buildings=starting_establishments,
-                             starting_major_establishments=starting_major_establishments)
+        game = MachiKoroGame(
+            n_players=5,
+            starting_buildings=starting_establishments,
+            starting_major_establishments=starting_major_establishments,
+        )
         game.play_game()

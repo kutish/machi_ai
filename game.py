@@ -1,16 +1,18 @@
-import random
 import math
-from pydantic import BaseModel, Field
+import random
 from typing import Dict
+
+from pydantic import BaseModel, Field
+
 from constants import (
-    starting_buildings_dict,
+    activation_dict,
+    building_cost_dict,
     landmarks_tuple,
     major_establishments_tuple,
     primary_industry_dict,
-    secondary_industry_dict,
     restaurants_tuple,
-    activation_dict,
-    building_cost_dict,
+    secondary_industry_dict,
+    starting_buildings_dict,
 )
 
 
@@ -36,7 +38,10 @@ class MachiKoroGame:
         starting_major_establishments: tuple = (),
     ):
         self.n_players = n_players
-        self.players = {i: self._init_player(i, starting_buildings, starting_major_establishments) for i in range(n_players)}
+        self.players = {
+            i: self._init_player(i, starting_buildings, starting_major_establishments)
+            for i in range(n_players)
+        }
         self.market = self._init_market(n_players)
         self.current_player = 0
         self.current_turn = 0
@@ -107,7 +112,9 @@ class MachiKoroGame:
         reverse_player_order = self.get_reverse_player_order(current_player_id)
         for player_id in reverse_player_order:
             has_shopping_mall = self.players[player_id].landmarks["shopping_mall"]
-            for building_name, building_info in self.players[player_id].establishments.items():
+            for building_name, building_info in self.players[
+                player_id
+            ].establishments.items():
                 if self.players[current_player_id].coins == 0:
                     continue
                 if building_name not in restaurants_tuple:
@@ -136,42 +143,61 @@ class MachiKoroGame:
                     coins_to_take, self.players[current_player_id].coins
                 )
                 self.players[current_player_id].coins -= coins_to_take
-                print(f'{current_player_id=} lost {coins_to_take=}, current player coins: {self.players[current_player_id].coins}')
+                print(
+                    f"{current_player_id=} lost {coins_to_take=}, current player coins: {self.players[current_player_id].coins}"
+                )
                 self.players[player_id].coins += coins_to_take
                 print(
-                    f'{player_id=} gain {coins_to_take=}, current player coins: {self.players[player_id].coins}'
+                    f"{player_id=} gain {coins_to_take=}, current player coins: {self.players[player_id].coins}"
                 )
 
         # green goes second, loan office is the first of them
         if "loan_office" in self.players[current_player_id].establishments.keys():
             coins_to_take = activation_dict["loan_office"]["value"]
-            coins_to_take *= self.players[current_player_id].establishments[
-                "loan_office"
-            ].working
+            coins_to_take *= (
+                self.players[current_player_id].establishments["loan_office"].working
+            )
             coins_to_take = min(
                 abs(coins_to_take), self.players[current_player_id].coins
             )
             self.players[current_player_id].coins -= coins_to_take
             if (
-                self.players[current_player_id].establishments["loan_office"].on_renovation > 0
+                self.players[current_player_id]
+                .establishments["loan_office"]
+                .on_renovation
+                > 0
             ):
                 self.renovation("open", current_player_id, "loan_office")
 
         # moving company is the second
-        if "moving_company" in self.players[current_player_id].establishments and roll in activation_dict["moving_company"]["roll"]:
-            building_info = self.players[current_player_id].establishments["moving_company"]
+        if (
+            "moving_company" in self.players[current_player_id].establishments
+            and roll in activation_dict["moving_company"]["roll"]
+        ):
+            building_info = self.players[current_player_id].establishments[
+                "moving_company"
+            ]
             for _ in range(building_info.working):
                 self.clean_empty_cards()
                 kwargs = {
                     "target_player_id": self.get_target_player_id(current_player_id),
                     "current_player_building": random.choice(
-                    [
-                        key
-                        for key in self.players[current_player_id].establishments.keys()
-                        if self.players[current_player_id].establishments[key].working > 0
-                           or self.players[current_player_id].establishments[key].on_renovation > 0
-                    ]
-                )}
+                        [
+                            key
+                            for key in self.players[
+                                current_player_id
+                            ].establishments.keys()
+                            if self.players[current_player_id]
+                            .establishments[key]
+                            .working
+                            > 0
+                            or self.players[current_player_id]
+                            .establishments[key]
+                            .on_renovation
+                            > 0
+                        ]
+                    ),
+                }
                 self.activate_special_card(
                     "moving_company", current_player_id, building_info, **kwargs
                 )
@@ -179,11 +205,10 @@ class MachiKoroGame:
             if building_info.on_renovation:
                 self.renovation("open", current_player_id, "moving_company")
 
-
-        has_shopping_mall = self.players[current_player_id].landmarks[
-            "shopping_mall"
-        ]
-        for building_name, building_info in self.players[current_player_id].establishments.items():
+        has_shopping_mall = self.players[current_player_id].landmarks["shopping_mall"]
+        for building_name, building_info in self.players[
+            current_player_id
+        ].establishments.items():
             if building_name not in secondary_industry_dict:
                 continue
             if building_name in ("loan_office", "moving_company"):
@@ -210,7 +235,9 @@ class MachiKoroGame:
 
         # blue goes next
         for player_id in self.players:
-            for building_name, building_info in self.players[player_id].establishments.items():
+            for building_name, building_info in self.players[
+                player_id
+            ].establishments.items():
                 if building_name not in primary_industry_dict:
                     continue
                 if building_info.working == 0:
@@ -222,9 +249,7 @@ class MachiKoroGame:
 
                 coins_to_take = activation_dict[building_name]["value"]
                 if coins_to_take == "special":
-                    self.activate_special_card(
-                        building_name, player_id, building_info
-                    )
+                    self.activate_special_card(building_name, player_id, building_info)
                     continue
 
                 coins_to_take *= building_info.working
@@ -252,18 +277,32 @@ class MachiKoroGame:
                 kwargs["target_building_name"] = random.choice(choose_from)
 
             self.activate_special_card(
-                building_name, current_player_id, EstablishmentCount(working=1, on_renovation=0), **kwargs
+                building_name,
+                current_player_id,
+                EstablishmentCount(working=1, on_renovation=0),
+                **kwargs,
             )
 
         # special treatment for business center
-        if "business_center" in self.players[current_player_id].major_establishments and roll in activation_dict["business_center"]["roll"]:
+        if (
+            "business_center" in self.players[current_player_id].major_establishments
+            and roll in activation_dict["business_center"]["roll"]
+        ):
             kwargs = {"target_player_id": self.get_target_player_id(current_player_id)}  # noqa
             kwargs["target_player_building"] = random.choice(
                 [
                     key
-                    for key in self.players[kwargs["target_player_id"]].establishments.keys()
-                    if self.players[kwargs["target_player_id"]].establishments[key].working > 0
-                    or self.players[kwargs["target_player_id"]].establishments[key].on_renovation > 0
+                    for key in self.players[
+                        kwargs["target_player_id"]
+                    ].establishments.keys()
+                    if self.players[kwargs["target_player_id"]]
+                    .establishments[key]
+                    .working
+                    > 0
+                    or self.players[kwargs["target_player_id"]]
+                    .establishments[key]
+                    .on_renovation
+                    > 0
                 ]
             )
             kwargs["current_player_building"] = random.choice(
@@ -271,7 +310,8 @@ class MachiKoroGame:
                     key
                     for key in self.players[current_player_id].establishments.keys()
                     if self.players[current_player_id].establishments[key].working > 0
-                    or self.players[current_player_id].establishments[key].on_renovation > 0
+                    or self.players[current_player_id].establishments[key].on_renovation
+                    > 0
                 )
             )
             self.activate_special_card(
@@ -296,16 +336,20 @@ class MachiKoroGame:
         return target_player_id
 
     def activate_special_card(
-        self, card_name: str, current_player_id: int, building_info: EstablishmentCount, **kwargs
+        self,
+        card_name: str,
+        current_player_id: int,
+        building_info: EstablishmentCount,
+        **kwargs,
     ):
         match card_name:
             case "fruit_and_vegetable_market":
                 total_wheat_buildings = 0
-                for b_name, b_info in self.players[current_player_id].establishments.items():
+                for b_name, b_info in self.players[
+                    current_player_id
+                ].establishments.items():
                     if primary_industry_dict.get(b_name, "") == "wheat":
-                        total_wheat_buildings += (
-                            b_info.working + b_info.on_renovation
-                        )
+                        total_wheat_buildings += b_info.working + b_info.on_renovation
                 coins_to_gain = 2 * total_wheat_buildings
                 coins_to_gain *= building_info.working
                 self.players[current_player_id].coins += coins_to_gain
@@ -313,11 +357,11 @@ class MachiKoroGame:
                     self.renovation("open", current_player_id, card_name)
             case "cheese_factory":
                 total_cow_buildings = 0
-                for b_name, b_info in self.players[current_player_id].establishments.items():
+                for b_name, b_info in self.players[
+                    current_player_id
+                ].establishments.items():
                     if primary_industry_dict.get(b_name, "") == "cow":
-                        total_cow_buildings += (
-                            b_info.working + b_info.on_renovation
-                        )
+                        total_cow_buildings += b_info.working + b_info.on_renovation
                 coins_to_gain = 3 * total_cow_buildings
                 coins_to_gain *= building_info.working
                 self.players[current_player_id].coins += coins_to_gain
@@ -325,11 +369,11 @@ class MachiKoroGame:
                     self.renovation("open", current_player_id, card_name)
             case "furniture_factory":
                 total_gear_buildings = 0
-                for b_name, b_info in self.players[current_player_id].establishments.items():
+                for b_name, b_info in self.players[
+                    current_player_id
+                ].establishments.items():
                     if primary_industry_dict.get(b_name, "") == "gear":
-                        total_gear_buildings += (
-                            b_info.working + b_info.on_renovation
-                        )
+                        total_gear_buildings += b_info.working + b_info.on_renovation
                 coins_to_gain = 3 * total_gear_buildings
                 coins_to_gain *= building_info.working
                 self.players[current_player_id].coins += coins_to_gain
@@ -347,9 +391,7 @@ class MachiKoroGame:
                 target_player_id = kwargs["target_player_id"]
                 coins_to_take = 5
                 coins_to_take *= building_info.working
-                coins_to_take = min(
-                    coins_to_take, self.players[target_player_id].coins
-                )
+                coins_to_take = min(coins_to_take, self.players[target_player_id].coins)
                 self.players[target_player_id].coins -= coins_to_take
                 self.players[current_player_id].coins += coins_to_take
             case "business_center":
@@ -357,51 +399,93 @@ class MachiKoroGame:
                 target_player_building = kwargs["target_player_building"]
                 current_player_building = kwargs["current_player_building"]
 
-                b_info = self.players[target_player_id].establishments[target_player_building]
+                b_info = self.players[target_player_id].establishments[
+                    target_player_building
+                ]
                 transferring_renovated = False
                 if b_info.working > 0:
-                    self.players[target_player_id].establishments[target_player_building].working -= 1
+                    self.players[target_player_id].establishments[
+                        target_player_building
+                    ].working -= 1
                 elif b_info.on_renovation > 0:
                     transferring_renovated = True
-                    self.players[target_player_id].establishments[target_player_building].on_renovation -= 1
-                
-                b_info = self.players[target_player_id].establishments[target_player_building]
-                if b_info.working == 0 and b_info.on_renovation == 0:
-                    self.players[target_player_id].establishments.pop(target_player_building)
+                    self.players[target_player_id].establishments[
+                        target_player_building
+                    ].on_renovation -= 1
 
-                if target_player_building in self.players[current_player_id].establishments:
+                b_info = self.players[target_player_id].establishments[
+                    target_player_building
+                ]
+                if b_info.working == 0 and b_info.on_renovation == 0:
+                    self.players[target_player_id].establishments.pop(
+                        target_player_building
+                    )
+
+                if (
+                    target_player_building
+                    in self.players[current_player_id].establishments
+                ):
                     if transferring_renovated:
-                        self.players[current_player_id].establishments[target_player_building].on_renovation += 1
+                        self.players[current_player_id].establishments[
+                            target_player_building
+                        ].on_renovation += 1
                     else:
-                        self.players[current_player_id].establishments[target_player_building].working += 1
+                        self.players[current_player_id].establishments[
+                            target_player_building
+                        ].working += 1
                 else:
                     if transferring_renovated:
-                        self.players[current_player_id].establishments[target_player_building] = EstablishmentCount(working=0, on_renovation=1)
+                        self.players[current_player_id].establishments[
+                            target_player_building
+                        ] = EstablishmentCount(working=0, on_renovation=1)
                     else:
-                        self.players[current_player_id].establishments[target_player_building] = EstablishmentCount(working=1, on_renovation=0)
+                        self.players[current_player_id].establishments[
+                            target_player_building
+                        ] = EstablishmentCount(working=1, on_renovation=0)
 
-                b_info = self.players[current_player_id].establishments[current_player_building]
+                b_info = self.players[current_player_id].establishments[
+                    current_player_building
+                ]
                 if b_info.on_renovation > 0:
                     transferring_renovated = True
-                    self.players[current_player_id].establishments[current_player_building].on_renovation -= 1
+                    self.players[current_player_id].establishments[
+                        current_player_building
+                    ].on_renovation -= 1
                 elif b_info.working > 0:
                     transferring_renovated = False
-                    self.players[current_player_id].establishments[current_player_building].working -= 1
+                    self.players[current_player_id].establishments[
+                        current_player_building
+                    ].working -= 1
 
-                b_info = self.players[current_player_id].establishments[current_player_building]
+                b_info = self.players[current_player_id].establishments[
+                    current_player_building
+                ]
                 if b_info == EstablishmentCount(working=0, on_renovation=0):
-                    self.players[current_player_id].establishments.pop(current_player_building)
+                    self.players[current_player_id].establishments.pop(
+                        current_player_building
+                    )
 
-                if current_player_building in self.players[target_player_id].establishments:
+                if (
+                    current_player_building
+                    in self.players[target_player_id].establishments
+                ):
                     if transferring_renovated:
-                        self.players[target_player_id].establishments[current_player_building].on_renovation += 1
+                        self.players[target_player_id].establishments[
+                            current_player_building
+                        ].on_renovation += 1
                     else:
-                        self.players[target_player_id].establishments[current_player_building].working += 1
+                        self.players[target_player_id].establishments[
+                            current_player_building
+                        ].working += 1
                 else:
                     if transferring_renovated:
-                        self.players[target_player_id].establishments[current_player_building] = EstablishmentCount(working=0, on_renovation=1)
+                        self.players[target_player_id].establishments[
+                            current_player_building
+                        ] = EstablishmentCount(working=0, on_renovation=1)
                     else:
-                        self.players[target_player_id].establishments[current_player_building] = EstablishmentCount(working=1, on_renovation=0)
+                        self.players[target_player_id].establishments[
+                            current_player_building
+                        ] = EstablishmentCount(working=1, on_renovation=0)
             case "tuna_boat":
                 tuna_roll, _ = self.roll_dice(num_dice=2)
                 coins_to_gain = tuna_roll * building_info.working
@@ -413,16 +497,16 @@ class MachiKoroGame:
                     "flower_garden",
                     EstablishmentCount(working=0, on_renovation=0),
                 )
-                flower_gardens = (
-                    flower_gardens.working + flower_gardens.on_renovation
-                )
+                flower_gardens = flower_gardens.working + flower_gardens.on_renovation
                 coins_to_gain = flower_gardens * building_info.working
                 self.players[current_player_id].coins += coins_to_gain
                 if building_info.on_renovation > 0:
                     self.renovation("open", current_player_id, card_name)
             case "food_warehouse":
                 total_restaurants = 0
-                for b_name, b_info in self.players[current_player_id].establishments.items():
+                for b_name, b_info in self.players[
+                    current_player_id
+                ].establishments.items():
                     if b_name in restaurants_tuple:
                         total_restaurants += b_info.working + b_info.on_renovation
                 coins_to_gain = total_restaurants * 2
@@ -438,12 +522,12 @@ class MachiKoroGame:
                     coins_to_take += 1
                 if not self.players[receiving_player_id].landmarks["harbor"]:
                     coins_to_take = 0
-                coins_to_take *= self.players[receiving_player_id].establishments[
-                    "sushi_bar"
-                ].working
-                coins_to_take = min(
-                    coins_to_take, self.players[target_player_id].coins
+                coins_to_take *= (
+                    self.players[receiving_player_id]
+                    .establishments["sushi_bar"]
+                    .working
                 )
+                coins_to_take = min(coins_to_take, self.players[target_player_id].coins)
                 self.players[target_player_id].coins -= coins_to_take
                 self.players[receiving_player_id].coins += coins_to_take
                 if building_info.on_renovation > 0:
@@ -452,7 +536,9 @@ class MachiKoroGame:
                 reverse_player_order = self.get_reverse_player_order(current_player_id)
                 for target_player_id in reverse_player_order:
                     coins_to_take = 0
-                    for b_name, b_info in self.players[target_player_id].establishments.items():
+                    for b_name, b_info in self.players[
+                        target_player_id
+                    ].establishments.items():
                         if (
                             b_name in restaurants_tuple
                             or secondary_industry_dict.get(b_name, "") == "bread"
@@ -487,9 +573,7 @@ class MachiKoroGame:
                 if sum(self.players[current_player_id].landmarks.values()) < 2:
                     coins_to_gain = (
                         3
-                        if self.players[current_player_id].landmarks[
-                            "shopping_mall"
-                        ]
+                        if self.players[current_player_id].landmarks["shopping_mall"]
                         else 2
                     )
                     coins_to_gain *= building_info.working
@@ -503,9 +587,9 @@ class MachiKoroGame:
                 current_player_building = kwargs["current_player_building"]
 
                 if (
-                    self.players[current_player_id].establishments[
-                        current_player_building
-                    ].on_renovation
+                    self.players[current_player_id]
+                    .establishments[current_player_building]
+                    .on_renovation
                     > 0
                 ):
                     self.players[current_player_id].establishments[
@@ -554,9 +638,11 @@ class MachiKoroGame:
                     building_info.working,
                     building_info.on_renovation,
                 )
-                self.players[current_player_id].establishments["winery"] = EstablishmentCount(
-                    working=on_renovation,
-                    on_renovation=working,
+                self.players[current_player_id].establishments["winery"] = (
+                    EstablishmentCount(
+                        working=on_renovation,
+                        on_renovation=working,
+                    )
                 )
             case "demolition_company":
                 landmarks_with_costs = sorted(
@@ -575,9 +661,7 @@ class MachiKoroGame:
                     if not len(landmarks_with_costs):
                         break
                     landmark_to_close = landmarks_with_costs[0][0]
-                    self.players[current_player_id].landmarks[landmark_to_close] = (
-                        False
-                    )
+                    self.players[current_player_id].landmarks[landmark_to_close] = False
                     self.market[landmark_to_close] += 1
                     self.players[current_player_id].coins += 8
                     landmarks_with_costs = landmarks_with_costs[1:]
@@ -629,11 +713,17 @@ class MachiKoroGame:
                 building_to_close = kwargs["target_building_name"]
                 for player_id in self.players:
                     if building_to_close in self.players[player_id].establishments:
-                        close_count = self.players[player_id].establishments[
+                        close_count = (
+                            self.players[player_id]
+                            .establishments[building_to_close]
+                            .working
+                        )
+                        self.players[player_id].establishments[
                             building_to_close
-                        ].working
-                        self.players[player_id].establishments[building_to_close].working -= close_count
-                        self.players[player_id].establishments[building_to_close].on_renovation += close_count
+                        ].working -= close_count
+                        self.players[player_id].establishments[
+                            building_to_close
+                        ].on_renovation += close_count
             case "tech_startup":
                 reverse_player_order = self.get_reverse_player_order(current_player_id)
                 for _ in range(building_info.working):
@@ -645,27 +735,26 @@ class MachiKoroGame:
                         self.players[player_id].coins -= coins_to_take
                         self.players[current_player_id].coins += coins_to_take
 
-
     def renovation(self, direction: str, player_id: int, card_name: str):
         if direction == "open":
             to_open = self.players[player_id].establishments[card_name].on_renovation
             self.players[player_id].establishments[card_name].on_renovation = 0
             self.players[player_id].establishments[card_name].working += to_open
-        elif direction == 'close':
+        elif direction == "close":
             to_close = self.players[player_id].establishments[card_name].working
             self.players[player_id].establishments[card_name].working = 0
             self.players[player_id].establishments[card_name].on_renovation += to_close
 
-
     def clean_empty_cards(self):
         for player_id in self.players:
             to_pop = []
-            for building_name, building_info in self.players[player_id].establishments.items():
+            for building_name, building_info in self.players[
+                player_id
+            ].establishments.items():
                 if building_info == EstablishmentCount(working=0, on_renovation=0):
                     to_pop.append(building_name)
             for building_name in to_pop:
                 self.players[player_id].establishments.pop(building_name)
-
 
     def take_turn(self):
         """Simulate one turn for the current player."""
@@ -674,7 +763,7 @@ class MachiKoroGame:
         self.current_turn += 1
         print(f"START OF TURN {self.current_turn}")
         for player_id in self.players:
-            print(f'\t{player_id=}, coins: {self.players[player_id].coins}')
+            print(f"\t{player_id=}, coins: {self.players[player_id].coins}")
         if not self.players[current_player_id].is_first_turn:
             # Step 1: Roll Dice
             num_dice = (
@@ -694,7 +783,9 @@ class MachiKoroGame:
                     print(f"Player {current_player_id} chose to reroll")
                     num_dice = (
                         1
-                        if not self.players[current_player_id].landmarks["train_station"]
+                        if not self.players[current_player_id].landmarks[
+                            "train_station"
+                        ]
                         else random.choice([1, 2])
                     )
                     roll, is_double = self.roll_dice(num_dice)
@@ -720,11 +811,13 @@ class MachiKoroGame:
             card
             for card, count in self.market.items()
             if building_cost_dict[card] <= self.players[current_player_id].coins
-                and self.market[card] > 0
-                and not self.players[current_player_id].major_establishments.get(card, False)
-                and not self.players[current_player_id].landmarks.get(card, False)
+            and self.market[card] > 0
+            and not self.players[current_player_id].major_establishments.get(
+                card, False
+            )
+            and not self.players[current_player_id].landmarks.get(card, False)
         ]
-        print(f'{possible_purchases=}')
+        print(f"{possible_purchases=}")
         has_built = False
         if possible_purchases:
             purchase = random.choice(possible_purchases)
@@ -740,12 +833,16 @@ class MachiKoroGame:
                 self.players[current_player_id].coins -= building_cost_dict[purchase]
                 self.market[purchase] -= 1
                 if purchase not in self.players[current_player_id].establishments:
-                    self.players[current_player_id].establishments[purchase] = EstablishmentCount(
-                        working=1,
-                        on_renovation=0,
+                    self.players[current_player_id].establishments[purchase] = (
+                        EstablishmentCount(
+                            working=1,
+                            on_renovation=0,
+                        )
                     )
                 else:
-                    self.players[current_player_id].establishments[purchase].working += 1
+                    self.players[current_player_id].establishments[
+                        purchase
+                    ].working += 1
             has_built = True
             print(f"Player {current_player_id} bought {purchase}.")
 
@@ -761,13 +858,14 @@ class MachiKoroGame:
             self.players[current_player_id].coins += 10
 
         for player_id in self.players:
-            print(f'\t{player_id=}, coins: {self.players[player_id].coins}, landmarks: {self.players[player_id].landmarks}')
+            print(
+                f"\t{player_id=}, coins: {self.players[player_id].coins}, landmarks: {self.players[player_id].landmarks}"
+            )
         if is_double and self.players[current_player_id].landmarks["amusement_park"]:
             # no reason not to take a second turn
             pass
         else:
             self.current_player = (self.current_player + 1) % self.n_players
-
 
     def is_game_over(self):
         """Check if a player has won."""
