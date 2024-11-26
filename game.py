@@ -1,8 +1,10 @@
 import math
 import random
-from typing import Dict
+from typing import Dict, Tuple, Union
 
-from pydantic import BaseModel, Field
+from frozendict import frozendict
+from pydantic import BaseModel
+from pydantic.fields import Field
 
 from constants import (
     activation_dict,
@@ -34,25 +36,29 @@ class MachiKoroGame:
     def __init__(
         self,
         n_players: int,
-        starting_buildings: dict = starting_buildings_dict,
+        starting_buildings: frozendict = starting_buildings_dict,
         starting_major_establishments: tuple = (),
     ):
         self.n_players = n_players
         self.players = {
-            i: self._init_player(i, starting_buildings, starting_major_establishments)
+            i: self._init_player(
+                player_id=i,
+                starting_buildings=starting_buildings,
+                starting_major_establishments=starting_major_establishments,
+            )
             for i in range(n_players)
         }
-        self.market = self._init_market(n_players)
+        self.market = self._init_market(n_players=n_players)
         self.current_player = 0
         self.current_turn = 0
         self.tech_startups = {i: 0 for i in range(n_players)}
 
     @staticmethod
     def _init_player(
-        player_id: int,
-        starting_buildings: dict = starting_buildings_dict,
+        player_id: int = 0,
+        starting_buildings: frozendict = starting_buildings_dict,
         starting_major_establishments: tuple = (),
-    ):
+    ) -> Player:
         return Player(
             id=player_id,
             coins=3,
@@ -69,7 +75,7 @@ class MachiKoroGame:
         )
 
     @staticmethod
-    def _init_market(n_players: int):
+    def _init_market(n_players: int = 2) -> dict:
         """Initialize the market with establishment cards."""
         market_dict = {landmark: n_players for landmark in landmarks_tuple}
         market_dict = {
@@ -89,16 +95,16 @@ class MachiKoroGame:
         return market_dict
 
     @staticmethod
-    def roll_dice(num_dice=1):
+    def roll_dice(num_dice=1) -> Tuple[int, bool]:
         """Simulate rolling dice."""
         roll1 = random.randint(1, 6)
         roll2 = random.randint(1, 6) if num_dice == 2 else 0
         is_double = True if roll1 == roll2 else False
         return roll1 + roll2, is_double
 
-    def get_reverse_player_order(self, player_id: int):
+    def get_reverse_player_order(self, player_id: int) -> list:
         order = [player_id - 1 if player_id - 1 >= 0 else self.n_players - 1]
-        for id_ in range(self.n_players - 1):
+        for _ in range(self.n_players - 1):
             if order[-1] == 0:
                 order.append(self.n_players - 1)
             else:
@@ -106,7 +112,7 @@ class MachiKoroGame:
 
         return order[:-1]
 
-    def activate_cards(self, current_player_id: int, roll: int):
+    def activate_cards(self, current_player_id: int, roll: int) -> None:
         """Activate cards based on dice roll."""
         # red goes first
         reverse_player_order = self.get_reverse_player_order(current_player_id)
@@ -288,23 +294,24 @@ class MachiKoroGame:
             "business_center" in self.players[current_player_id].major_establishments
             and roll in activation_dict["business_center"]["roll"]
         ):
-            kwargs = {"target_player_id": self.get_target_player_id(current_player_id)}  # noqa
-            kwargs["target_player_building"] = random.choice(
-                [
-                    key
-                    for key in self.players[
-                        kwargs["target_player_id"]
-                    ].establishments.keys()
-                    if self.players[kwargs["target_player_id"]]
-                    .establishments[key]
-                    .working
-                    > 0
-                    or self.players[kwargs["target_player_id"]]
-                    .establishments[key]
-                    .on_renovation
-                    > 0
-                ]
-            )
+            kwargs: Dict[str, Union[int, str]] = {
+                "target_player_id": self.get_target_player_id(current_player_id)
+            }
+            choose_from = [
+                key
+                for key in self.players[
+                    int(kwargs["target_player_id"])
+                ].establishments.keys()
+                if self.players[int(kwargs["target_player_id"])]
+                .establishments[key]
+                .working
+                > 0
+                or self.players[int(kwargs["target_player_id"])]
+                .establishments[key]
+                .on_renovation
+                > 0
+            ]
+            kwargs["target_player_building"] = random.choice(choose_from)
             kwargs["current_player_building"] = random.choice(
                 list(
                     key
@@ -321,7 +328,7 @@ class MachiKoroGame:
                 **kwargs,
             )
 
-    def get_target_player_id(self, current_player_id: int):
+    def get_target_player_id(self, current_player_id: int) -> int:
         # just take from the richest
         target_player_id = sorted(
             [
@@ -341,7 +348,7 @@ class MachiKoroGame:
         current_player_id: int,
         building_info: EstablishmentCount,
         **kwargs,
-    ):
+    ) -> None:
         match card_name:
             case "fruit_and_vegetable_market":
                 total_wheat_buildings = 0
@@ -561,6 +568,7 @@ class MachiKoroGame:
                         self.players[target_player_id].coins -= coins_to_take
                         self.players[current_player_id].coins += coins_to_take
             case "corn_field":
+                coins_to_gain: int = 0  # noqa
                 if sum(self.players[current_player_id].landmarks.values()) < 2:
                     coins_to_gain = 2
                     coins_to_gain *= building_info.working
@@ -734,8 +742,10 @@ class MachiKoroGame:
                         )
                         self.players[player_id].coins -= coins_to_take
                         self.players[current_player_id].coins += coins_to_take
+            case _:
+                pass
 
-    def renovation(self, direction: str, player_id: int, card_name: str):
+    def renovation(self, direction: str, player_id: int, card_name: str) -> None:
         if direction == "open":
             to_open = self.players[player_id].establishments[card_name].on_renovation
             self.players[player_id].establishments[card_name].on_renovation = 0
@@ -745,7 +755,7 @@ class MachiKoroGame:
             self.players[player_id].establishments[card_name].working = 0
             self.players[player_id].establishments[card_name].on_renovation += to_close
 
-    def clean_empty_cards(self):
+    def clean_empty_cards(self) -> None:
         for player_id in self.players:
             to_pop = []
             for building_name, building_info in self.players[
@@ -756,7 +766,7 @@ class MachiKoroGame:
             for building_name in to_pop:
                 self.players[player_id].establishments.pop(building_name)
 
-    def take_turn(self):
+    def take_turn(self) -> None:
         """Simulate one turn for the current player."""
         current_player_id = self.current_player
         is_double = False
@@ -811,7 +821,7 @@ class MachiKoroGame:
             card
             for card, count in self.market.items()
             if building_cost_dict[card] <= self.players[current_player_id].coins
-            and self.market[card] > 0
+            and count > 0
             and not self.players[current_player_id].major_establishments.get(
                 card, False
             )
@@ -821,17 +831,13 @@ class MachiKoroGame:
         has_built = False
         if possible_purchases:
             purchase = random.choice(possible_purchases)
+            self.market[purchase] -= 1
+            self.players[current_player_id].coins -= building_cost_dict[purchase]
             if purchase in landmarks_tuple:
-                self.market[purchase] -= 1
-                self.players[current_player_id].coins -= building_cost_dict[purchase]
                 self.players[current_player_id].landmarks[purchase] = True
             elif purchase in major_establishments_tuple:
-                self.market[purchase] -= 1
-                self.players[current_player_id].coins -= building_cost_dict[purchase]
                 self.players[current_player_id].major_establishments[purchase] = True
             else:
-                self.players[current_player_id].coins -= building_cost_dict[purchase]
-                self.market[purchase] -= 1
                 if purchase not in self.players[current_player_id].establishments:
                     self.players[current_player_id].establishments[purchase] = (
                         EstablishmentCount(

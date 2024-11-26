@@ -7,7 +7,7 @@ starting_buildings_dict = frozendict(
     }
 )
 
-building_cost_dict = frozendict(
+building_cost_dict: frozendict = frozendict(
     {
         "wheat_field": 1,
         "apple_orchard": 3,

@@ -1,3 +1,5 @@
+from frozendict import frozendict
+
 from constants import (
     major_establishments_tuple,
     primary_industry_dict,
@@ -115,6 +117,7 @@ def test_game_2_all_buildings():
         + list(secondary_industry_dict.keys())
         + list(restaurants_tuple)
     }
+    starting_establishments = frozendict(starting_establishments)
     starting_major_establishments = major_establishments_tuple
     for _ in range(100):
         game = MachiKoroGame(
@@ -132,6 +135,7 @@ def test_game_3_all_buildings():
         + list(secondary_industry_dict.keys())
         + list(restaurants_tuple)
     }
+    starting_establishments = frozendict(starting_establishments)
     starting_major_establishments = major_establishments_tuple
     for _ in range(100):
         game = MachiKoroGame(
@@ -149,6 +153,7 @@ def test_game_4_all_buildings():
         + list(secondary_industry_dict.keys())
         + list(restaurants_tuple)
     }
+    starting_establishments = frozendict(starting_establishments)
     starting_major_establishments = major_establishments_tuple
     for _ in range(100):
         game = MachiKoroGame(
@@ -166,6 +171,7 @@ def test_game_5_all_buildings():
         + list(secondary_industry_dict.keys())
         + list(restaurants_tuple)
     }
+    starting_establishments = frozendict(starting_establishments)
     starting_major_establishments = major_establishments_tuple
     for _ in range(100):
         game = MachiKoroGame(
